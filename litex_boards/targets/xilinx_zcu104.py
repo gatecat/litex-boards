@@ -11,6 +11,7 @@ from migen import *
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from litex.gen import *
+from litex.build.generic_platform import *
 
 from litex_boards.platforms import xilinx_zcu104
 
@@ -60,6 +61,8 @@ class BaseSoC(SoCCore):
 
         # CRG --------------------------------------------------------------------------------------
         self.crg = _CRG(platform, sys_clk_freq)
+        cpu_reset = platform.request("cpu_reset")
+        self.comb += self.crg.rst.eq(cpu_reset)
 
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, sys_clk_freq, ident="LiteX SoC on ZCU104", **kwargs)
@@ -82,6 +85,25 @@ class BaseSoC(SoCCore):
             self.leds = LedChaser(
                 pads         = platform.request_all("user_led"),
                 sys_clk_freq = sys_clk_freq)
+
+        jtag_pmods = [
+            ("jtag_pmod0", 0,
+                Subsignal("tck", Pins("PMOD0:0"), IOStandard("LVCMOS33")),
+                Subsignal("tms", Pins("PMOD0:1"), IOStandard("LVCMOS33")),
+                Subsignal("tdi", Pins("PMOD0:2"), IOStandard("LVCMOS33")),
+                Subsignal("tdo", Pins("PMOD0:3"), IOStandard("LVCMOS33")),
+            ),
+        ]
+        platform.add_extension(jtag_pmods)
+        jtagpads = platform.request("jtag_pmod0")
+
+        self.cpu.add_jtag(jtagpads)
+        self.comb += self.cpu.jtag_tck.eq(jtagpads.tck)
+        self.comb += self.cpu.jtag_tms.eq(jtagpads.tms)
+        self.comb += self.cpu.jtag_tdi.eq(jtagpads.tdi)
+        self.comb += self.cpu.jtag_trst.eq(1)
+        self.comb += jtagpads.tdo.eq(self.cpu.jtag_tdo)
+
 
 # Build --------------------------------------------------------------------------------------------
 

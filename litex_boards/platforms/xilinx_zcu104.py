@@ -102,6 +102,12 @@ _io = [
     ),
 ]
 
+_connectors = [
+    # PMOD signal number:
+    #          1  2  3  4  7  8  9  10
+    ("PMOD0", "G8 H8 G7 H7 G6 H6 J6 J7"),
+]
+
 # Platform -----------------------------------------------------------------------------------------
 
 class Platform(XilinxUSPPlatform):
@@ -109,7 +115,7 @@ class Platform(XilinxUSPPlatform):
     default_clk_period = 1e9/125e6
 
     def __init__(self, toolchain="vivado"):
-        XilinxUSPPlatform.__init__(self, "xczu7ev-ffvc1156-2-i", _io, toolchain=toolchain)
+        XilinxUSPPlatform.__init__(self, "xczu7ev-ffvc1156-2-i", _io, _connectors, toolchain=toolchain)
 
     def create_programmer(self):
         return VivadoProgrammer()
@@ -121,3 +127,4 @@ class Platform(XilinxUSPPlatform):
         self.add_platform_command("set_property INTERNAL_VREF 0.84 [get_iobanks 64]")
         self.add_platform_command("set_property INTERNAL_VREF 0.84 [get_iobanks 65]")
         self.add_platform_command("set_property INTERNAL_VREF 0.84 [get_iobanks 66]")
+        self.add_platform_command("set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets jtag_pmod0_tck_IBUF_inst/O]")
